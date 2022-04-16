@@ -4,7 +4,13 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ce4eb4e3-b57d-49a9-9676-0b0348517f21" name="Default Changelist" comment="Update Plugin" />
+    <list default="true" id="ce4eb4e3-b57d-49a9-9676-0b0348517f21" name="Default Changelist" comment="Update Plugin">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/android/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/src/main/kotlin/com/nyartech/hyperpay/HyperpayPlugin.kt" beforeDir="false" afterPath="$PROJECT_DIR$/android/src/main/kotlin/com/nyartech/hyperpay/HyperpayPlugin.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/android/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/example/android/app/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/hyperpay.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/hyperpay.dart" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -14,10 +20,10 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$PROJECT_DIR$/lib/src/hyperpay.dart" root0="SKIP_INSPECTION" />
-    <setting file="file://$PROJECT_DIR$/lib/hyperpay.dart" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/example/lib/main.dart" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/lib/hyperpay.dart" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/android/src/main/kotlin/com/nyartech/hyperpay/HyperpayPlugin.kt" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/lib/src/hyperpay.dart" root0="SKIP_INSPECTION" />
   </component>
   <component name="ProjectId" id="27nlPsa5h5fsnPqRzNBF9cCVnKo" />
   <component name="ProjectView">
@@ -57,7 +63,14 @@
       <option name="project" value="LOCAL" />
       <updated>1649975908121</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Update Plugin">
+      <created>1649978863104</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1649978863104</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -76,6 +89,7 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Update Plugin" />

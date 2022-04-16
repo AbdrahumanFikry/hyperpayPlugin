@@ -157,6 +157,8 @@ class HyperpayPlugin {
       );
       final String code = status['code'];
 
+      log('$status', name: "HyperpayPlugin/paymentStatusResponse");
+
       if (code.paymentStatus == PaymentStatus.rejected) {
         throw HyperpayException(
             "Rejected payment.", code, status['description']);
@@ -179,7 +181,7 @@ class HyperpayPlugin {
   Future<Map<String, dynamic>> paymentStatus(String checkoutID,
       {Map<String, String>? headers}) async {
     try {
-     final params = '?entityId=${_checkoutSettings?.brand.entityID(config)}';
+      final params = '?entityId=${_checkoutSettings?.brand.entityID(config)}';
 
       final body = {'checkoutID': checkoutID};
 
@@ -196,6 +198,8 @@ class HyperpayPlugin {
         headers: headers,
         body: json.encode(body),
       );
+
+      log('${response.body}', name: "HyperpayPlugin/paymentStatus");
 
       final Map<String, dynamic> _resBody = json.decode(response.body);
       if (_resBody['result'] != null && _resBody['result']['code'] != null) {

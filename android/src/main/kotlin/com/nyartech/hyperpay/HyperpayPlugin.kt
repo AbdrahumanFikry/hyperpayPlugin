@@ -1,10 +1,15 @@
 package com.nyartech.hyperpay
 
+import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.*
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.net.Uri
 import android.os.*
 import android.util.Log
+import android.webkit.*
 import androidx.annotation.NonNull
 import androidx.browser.customtabs.*
 import com.oppwa.mobile.connect.exception.PaymentError
@@ -24,25 +29,25 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import java.util.*
 
 
 /** HyperpayPlugin */
 class HyperpayPlugin : FlutterPlugin, MethodCallHandler, ITransactionListener, ActivityAware {
     private val TAG = "HyperpayPlugin"
-    private val CUSTOM_TAB_PACKAGE_NAME = "com.android.chrome"
+    private val CUSTOM_TAB_PACKAGE_NAME = "com.chrome.beta"
 
     /// The MethodChannel that will the communication between Flutter and native Android
     ///
     /// This local reference serves to register the plugin with the Flutter Engine and unregister it
     /// when the Flutter Engine is detached from the Activity
     private lateinit var channel: MethodChannel
-    private var channelResult: MethodChannel.Result? = null
+    private var channelResult: Result? = null
 
     private var mActivity: Activity? = null
 
     private var providerBinder: IProviderBinder? = null
     private var intent: Intent? = null
+    private var webView: WebView? = null
 
     // Get the checkout ID from the endpoint on your server
     private var checkoutID = ""
@@ -62,7 +67,6 @@ class HyperpayPlugin : FlutterPlugin, MethodCallHandler, ITransactionListener, A
     // used to store the result URL from ChromeCustomTabs intent
     private var redirectData = ""
 
-    private var mCustomTabsServiceConnection: CustomTabsServiceConnection? = null
     private var mClient: CustomTabsClient? = null
     private var mCustomTabsSession: CustomTabsSession? = null
 
@@ -72,7 +76,7 @@ class HyperpayPlugin : FlutterPlugin, MethodCallHandler, ITransactionListener, A
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        mActivity = binding.activity;
+        mActivity = binding.activity
 
         // Remove any underscores from the application ID for Uri parsing
         // NOTE: It's important to add your application ID as the scheme, followed by ".payments"
@@ -155,39 +159,13 @@ class HyperpayPlugin : FlutterPlugin, MethodCallHandler, ITransactionListener, A
 
                     // Start and bind with the intent
                     mActivity!!.startService(intent)
-                    mActivity!!.bindService(intent, hyperpayConnection, Context.BIND_AUTO_CREATE)
+                    mActivity!!.bindService(
+                        intent,
+                        hyperpayConnection,
+                        Context.BIND_AUTO_CREATE
+                    )
 
-
-                    mCustomTabsServiceConnection = object : CustomTabsServiceConnection() {
-                        override fun onCustomTabsServiceConnected(componentName: ComponentName, customTabsClient: CustomTabsClient) {
-                            //Pre-warming
-                            mClient = customTabsClient
-                            mClient?.warmup(0L)
-                            mCustomTabsSession = mClient?.newSession(object : CustomTabsCallback() {
-                                override fun onNavigationEvent(navigationEvent: Int, extras: Bundle?) {
-                                    Log.w(TAG, "onNavigationEvent: Code = $navigationEvent")
-                                    when (navigationEvent) {
-                                        TAB_HIDDEN -> {
-                                            if (redirectData.isEmpty()) {
-                                                redirectData = ""
-                                                success("canceled")
-                                            } else {
-                                                redirectData = ""
-                                                Log.d(TAG, "Success, redirecting to app...")
-                                                success("success")
-                                            }
-                                        }
-                                    }
-                                }
-                            })
-                        }
-
-                        override fun onServiceDisconnected(name: ComponentName) {
-                            mClient = null
-                        }
-                    }
-
-                    mCustomTabsServiceConnection?.let { this.mActivity?.let { it1 -> CustomTabsClient.bindCustomTabsService(it1.applicationContext, CUSTOM_TAB_PACKAGE_NAME, it) } };
+                    bindCustomTabsService()
 
                     Log.d(TAG, "Payment mode is set to $paymentMode")
                     result.success(null)
@@ -213,21 +191,21 @@ class HyperpayPlugin : FlutterPlugin, MethodCallHandler, ITransactionListener, A
                 when (brand) {
                     // If the brand is not provided it returns an error result
                     Brand.UNKNOWN -> result.error(
-                            "0.1",
-                            "Please provide a valid brand",
-                            ""
+                        "0.1",
+                        "Please provide a valid brand",
+                        ""
                     )
                     else -> {
                         checkCreditCardValid()
 
                         val paymentParams: PaymentParams = CardPaymentParams(
-                                checkoutID,
-                                brand.name,
-                                cardNumber,
-                                cardHolder,
-                                expiryMonth,
-                                expiryYear,
-                                cvv
+                            checkoutID,
+                            brand.name,
+                            cardNumber,
+                            cardHolder,
+                            expiryMonth,
+                            expiryYear,
+                            cvv
                         )
 
                         //Set shopper result URL
@@ -238,9 +216,9 @@ class HyperpayPlugin : FlutterPlugin, MethodCallHandler, ITransactionListener, A
                             providerBinder?.submitTransaction(transaction)
                         } catch (e: PaymentException) {
                             result.error(
-                                    "0.2",
-                                    e.localizedMessage,
-                                    ""
+                                "0.2",
+                                e.localizedMessage,
+                                ""
                             )
                         }
                     }
@@ -260,33 +238,33 @@ class HyperpayPlugin : FlutterPlugin, MethodCallHandler, ITransactionListener, A
     private fun checkCreditCardValid() {
         if (!CardPaymentParams.isNumberValid(cardNumber)) {
             error(
-                    "1.1",
-                    "Card number is not valid for brand ${brand.name}",
-                    ""
+                "1.1",
+                "Card number is not valid for brand ${brand.name}",
+                ""
             )
         } else if (!CardPaymentParams.isHolderValid(cardHolder)) {
             error(
-                    "1.2",
-                    "Holder name is not valid",
-                    ""
+                "1.2",
+                "Holder name is not valid",
+                ""
             )
         } else if (!CardPaymentParams.isExpiryMonthValid(expiryMonth)) {
             error(
-                    "1.3",
-                    "Expiry month is not valid",
-                    ""
+                "1.3",
+                "Expiry month is not valid",
+                ""
             )
         } else if (!CardPaymentParams.isExpiryYearValid(expiryYear)) {
             error(
-                    "1.4",
-                    "Expiry year is not valid",
-                    ""
+                "1.4",
+                "Expiry year is not valid",
+                ""
             )
         } else if (!CardPaymentParams.isCvvValid(cvv)) {
             error(
-                    "1.5",
-                    "CVV is not valid",
-                    ""
+                "1.5",
+                "CVV is not valid",
+                ""
             )
         }
     }
@@ -302,8 +280,7 @@ class HyperpayPlugin : FlutterPlugin, MethodCallHandler, ITransactionListener, A
                 success("Transaction completed as synchronous.")
             } else {
                 val uri = Uri.parse(transaction.redirectUrl)
-
-                loadCustomTabForSite(mActivity!!, uri!!);
+                loadCustomTabForSite(uri!!)
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -312,20 +289,111 @@ class HyperpayPlugin : FlutterPlugin, MethodCallHandler, ITransactionListener, A
         }
     }
 
-    private fun loadCustomTabForSite(context: Context?, url: Uri) {
-        val customTabsIntent = CustomTabsIntent.Builder(mCustomTabsSession)
-                .setShowTitle(true)
-                .build()
-
-        customTabsIntent.launchUrl(context!!, Uri.parse(url.toString()))
-    }
 
     override fun transactionFailed(transaction: Transaction, error: PaymentError) {
         error(
-                "${error.errorCode}",
-                error.errorMessage,
-                "${error.errorInfo}"
+            "${error.errorCode}",
+            error.errorMessage,
+            "${error.errorInfo}"
         )
+    }
+
+    private fun loadCustomTabForSite(url: Uri) {
+
+        try {
+            val customTabsIntent = CustomTabsIntent.Builder(getSession(url))
+                .setShowTitle(true)
+                .build()
+
+            customTabsIntent.launchUrl(mActivity!!, Uri.parse(url.toString()))
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error: $e")
+            error("${e.message}️")
+        }
+    }
+
+    private fun getSession(url: Uri): CustomTabsSession? {
+        if (mClient == null) {
+            mCustomTabsSession = null
+        } else if (mCustomTabsSession == null) {
+            try {
+                val customTabsCallback = object : CustomTabsCallback() {
+                    override fun onNavigationEvent(navigationEvent: Int, extras: Bundle?) {
+                        Log.d(TAG, "onNavigationEvent: Code = $navigationEvent")
+
+                        when (navigationEvent) {
+                            TAB_HIDDEN -> {
+                                if (redirectData.isEmpty()) {
+                                    redirectData = ""
+                                    Log.d(TAG, "canceled, redirecting to app...")
+                                    success("canceled")
+                                } else {
+                                    redirectData = ""
+                                    Log.d(TAG, "Success, redirecting to app...")
+                                    success("success")
+                                }
+                            }
+                        }
+                    }
+                };
+
+                mCustomTabsSession = mClient!!.newSession(customTabsCallback);
+                mCustomTabsSession!!.mayLaunchUrl(url, null, null)
+
+            } catch (e: Exception) {
+                Log.e(TAG, "getSessionError = $e");
+            }
+
+        }
+        return mCustomTabsSession
+    }
+
+    private fun bindCustomTabsService() {
+        if (mClient != null) {
+            return
+        }
+        val mConnection: CustomTabsServiceConnection = object : CustomTabsServiceConnection() {
+            override fun onCustomTabsServiceConnected(
+                componentName: ComponentName,
+                customTabsClient: CustomTabsClient
+            ) {
+                mClient = customTabsClient
+                mClient!!.warmup(0L)
+            }
+
+            override fun onServiceDisconnected(name: ComponentName) {
+                mClient = null
+            }
+        }
+        val packageNameToUse = getPackageName(mActivity!!);
+        val chromePackage = CustomTabsClient.getPackageName(
+            mActivity!!,
+            packageNameToUse, false
+        )
+        val ok =
+            CustomTabsClient.bindCustomTabsService(mActivity!!, chromePackage, mConnection)
+
+        Log.d(TAG, "bindCustomTabsService : isOk = $ok  ,chromePackage = $chromePackage");
+    }
+
+    private fun getPackageName(context: Context): List<String> {
+        // Get default VIEW intent handler that can view a web url.
+        val activityIntent = Intent(Intent.ACTION_VIEW, Uri.parse("http://www.test-url.com"))
+
+        // Get all apps that can handle VIEW intents.
+        val pm = context.packageManager
+        val resolvedActivityList = pm.queryIntentActivities(activityIntent, 0)
+        val packagesSupportingCustomTabs: MutableList<String> = ArrayList()
+        for (info in resolvedActivityList) {
+            val serviceIntent = Intent()
+            serviceIntent.action = CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION
+            serviceIntent.setPackage(info.activityInfo.packageName)
+            if (pm.resolveService(serviceIntent, 0) != null) {
+                packagesSupportingCustomTabs.add(info.activityInfo.packageName)
+            }
+        }
+        return packagesSupportingCustomTabs
     }
 
 }
