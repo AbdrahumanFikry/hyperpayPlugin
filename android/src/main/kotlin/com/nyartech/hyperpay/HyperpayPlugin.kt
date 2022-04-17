@@ -34,7 +34,7 @@ import io.flutter.plugin.common.MethodChannel.Result
 /** HyperpayPlugin */
 class HyperpayPlugin : FlutterPlugin, MethodCallHandler, ITransactionListener, ActivityAware {
     private val TAG = "HyperpayPlugin"
-    private val CUSTOM_TAB_PACKAGE_NAME = "com.chrome.beta"
+    private val CUSTOM_TAB_PACKAGE_NAME = "com.android.chrome"
 
     /// The MethodChannel that will the communication between Flutter and native Android
     ///
